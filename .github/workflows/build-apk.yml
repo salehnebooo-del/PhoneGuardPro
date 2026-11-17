@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -46,3 +49,12 @@ jobs:
         with:
           name: PhoneGuardPro-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Publish APK as direct download (latest release)
+        if: success() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk PhoneGuardPro.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest PhoneGuardPro.apk --title "Phone Guard Pro (latest build)" --notes "Debug build from commit ${GITHUB_SHA::7}. Install on Android 10+."
